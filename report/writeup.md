@@ -173,7 +173,7 @@ To see which features the forest relies on, I used **grouped permutation importa
 columns at a time and measurde the drop in balanced accuracy, where similar survey questions were assigned to the same group 
 (see **Feature Engineering** above). The groups that significantly hurt the model when shuffled
 (*p* < 0.05), in order, were **region**, **EU-referendum vote**, **political interest**, the **economic** value axis,
-**class position** (which includes working-class self-identity, owning more than one party), the **nationalism–internationalism** value axis, and
+**socio-economic background** (which includes working-class self-identity, owning more than one party), the **nationalism–internationalism** value axis, and
 **age**. No single group of features is exclusively important - the model uses a combination of who people are, how they voted before, how
 engaged they are, and where they sit on the value axes to tell the parties apart.
 
