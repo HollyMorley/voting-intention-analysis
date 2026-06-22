@@ -57,7 +57,7 @@ other respondents, I normalised the attitudinal responses by an individual's res
 standard deviation of each person's responses in the model, along with a rate of "don't know" responses, to capture the
 impact of response style on voting intention.
 
-<img src="figures/02_response_style.png" alt="Response behaviour" width="500">
+<img src="figures/02_response_style.png" alt="Response behaviour" width="900">
 
 *Figure 1. Response behaviour on the 11 attitudinal questions. Left: each respondent's mean answer
 (−2 disagree … +2 agree); right: the spread (SD) of their answers across the items. In each panel the
