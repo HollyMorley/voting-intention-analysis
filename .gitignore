@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.idea/
+.ipynb_checkpoints/
+~$*.docx
+.DS_Store
+
+notes.md
+scratch

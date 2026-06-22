@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>UK Voting Intention Explorer</title>
+
+    <!-- Plotly.js: the charting library. Loaded from a local copy so the page works
+         offline and straight from disk; falls back to the CDN if the copy is missing. -->
+    <script src="vendor/plotly-2.35.2.min.js"></script>
+    <script>
+        if (!window.Plotly) {
+            document.write('<scr' + 'ipt src="https://cdn.plot.ly/plotly-2.35.2.min.js"><\/scr' + 'ipt>');
+        }
+    </script>
+    <link rel="stylesheet" href="style.css"/>
+</head>
+
+<body>
+<header>
+    <h1>UK Voting Intention Explorer</h1>
+    <p class="subtitle">
+        How a survey of 1,468 people maps onto party support, and what matters to voters.
+    </p>
+</header>
+
+<main>
+    <!-- Global control: include the tiny parties or not. Flows through every chart. -->
+    <section id="intro">
+        <p class="explain">
+            The interactive plots in this page allow you to explore the survey results, and insights from a random
+            forest model trained to predict voting intentions.
+            This includes:
+        </p>
+        <ol class="explain" style="margin-top:0; padding-left:1.4rem;">
+            <li>Visualising the economic and nationalism values of respondents intending to vote for different parties
+            </li>
+            <li>Model insights &mdash; what demographic features and questionnaire answers are most important for
+                predicting voting patterns, and how the model went wrong: visualise the distribution of what the model
+                predicted versus true voting intentions
+            </li>
+            <li>Model predictions &mdash; interactively explore how altering non-demographic values/beliefs might change
+                voting intentions
+            </li>
+            <li>Examine voting intention breakdown along features that were important for predicting voting patterns
+            </li>
+            <li>Explore economic/social values of persuadable/uncommitted voters</li>
+        </ol>
+        <div class="controls">
+            <div class="field">
+                <label>Parties shown</label>
+                <div class="toggle" id="policyToggle">
+                    <button data-policy="all" class="active">All parties</button>
+                    <button data-policy="main">Main parties only</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 1 — the values map
+         ============================================================ -->
+    <section>
+        <p class="kicker">1 &middot; Values Exploration</p>
+        <h2>Where voters sit on economic and nationalistic values</h2>
+        <p class="explain">
+            Each dot is one person, placed by their answers to 10 attitude questions.
+            Left&ndash;right is the <b>nationalism&ndash;internationalism</b> scale
+            (internationalist/open on the left, nationalist/closed on the right);
+            bottom&ndash;top is the <b>economic</b> scale (economic left at the bottom,
+            economic right at the top). Colours show who they'd vote for. Click a party in
+            the legend to show or hide it.
+        </p>
+        <div class="controls">
+            <div class="field check">
+                <input type="checkbox" id="showIndividuals" checked/>
+                <label for="showIndividuals">Show individual respondents</label>
+            </div>
+            <div class="field check">
+                <input type="checkbox" id="showUndecided" checked/>
+                <label for="showUndecided">Show uncommitted voters</label>
+            </div>
+        </div>
+        <div id="compassChart" class="chart tall"></div>
+        <p class="note">
+            Labour and Lib Dem voters cluster in the bottom-left &mdash; economically
+            left and internationalist/open. Conservatives sit higher up (economic right)
+            and spread across the nationalism axis. The diamonds show each
+            party's average position; error bars span the 25th–75th percentile (IQR).
+        </p>
+    </section>
+
+    <!-- ============================================================
+         SECTION 2 — the model
+         ============================================================ -->
+    <section>
+        <p class="kicker">2 &middot; The model</p>
+        <h2>What predicts a vote?</h2>
+        <p class="explain">
+            A random forest predicts each person's vote from their values, background,
+            and demographics. Here's how accurate it is, and which information it relies on most.
+        </p>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="num" id="statAcc">&ndash;</div>
+                <div class="lbl">cross-validated balanced accuracy</div>
+            </div>
+            <div class="stat">
+                <div class="num" id="statBaseline">&ndash;</div>
+                <div class="lbl">if you just always guessed the biggest party</div>
+            </div>
+            <div class="stat">
+                <div class="num" id="statGap">&ndash;</div>
+                <div class="lbl">better than that baseline</div>
+            </div>
+        </div>
+
+        <h3 style="margin:1.2rem 0 .2rem; font-size:1.05rem;">Which answers matter most?</h3>
+        <p class="explain small">
+            Two ways to read importance.
+            <b>Importance for model</b>: how much accuracy drops if you scramble just that
+            group of answers (what it adds <i>on top of</i> everything else).
+            <b>Standalone power</b>: how well that group predicts <i>on its own</i>.
+            Stars mark statistical significance (one-sample t-test over cross-validation folds).
+        </p>
+        <div class="controls">
+            <div class="field">
+                <label>Importance measure</label>
+                <div class="toggle" id="impToggle">
+                    <button data-metric="perm" class="active">Importance for model</button>
+                    <button data-metric="uni">Standalone power</button>
+                </div>
+            </div>
+        </div>
+        <div id="importanceChart" class="chart tall"></div>
+
+        <h3 style="margin:1.4rem 0 .2rem; font-size:1.05rem;">How does the model get things wrong?</h3>
+        <p class="explain small">
+            Each row is the people who actually intend to vote for that party; the colours
+            show what the model predicted for them. A strong diagonal means accurate
+            predictions. Read along a row to see who gets confused with whom.
+        </p>
+        <div id="confusionChart" class="chart tall"></div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 3 — persona prediction
+         ============================================================ -->
+    <section>
+        <p class="kicker">3 &middot; Predict your vote</p>
+        <h2>What would the model predict for a particular person?</h2>
+        <p class="explain">
+            Select a demographic profile. The <b>Reference</b> panel shows the model&rsquo;s
+            prediction for an average person with those characteristics - background
+            features and political views are all set to the median for the group.
+            On the <b>Virtual</b> side, adjust the five political features to explore how
+            predictions change while keeping the demographic background fixed.
+        </p>
+
+        <!-- Shared demographic selector -->
+        <div class="controls">
+            <div class="field">
+                <label for="personaRegion">Region</label>
+                <select id="personaRegion"></select>
+            </div>
+            <div class="field">
+                <label for="personaAge">Age band</label>
+                <select id="personaAge"></select>
+            </div>
+            <div class="field">
+                <label for="personaGender">Gender</label>
+                <select id="personaGender"></select>
+            </div>
+            <div class="field">
+                <label for="personaWorkOrg">Work organisation</label>
+                <select id="personaWorkOrg"></select>
+            </div>
+            <div class="field">
+                <label>EU referendum vote</label>
+                <div class="toggle" id="personaEuToggle">
+                    <button data-eu="All" class="active">All</button>
+                    <button data-eu="Remain">Remain</button>
+                    <button data-eu="Leave">Leave</button>
+                    <button data-eu="No answer">Didn&rsquo;t vote</button>
+                </div>
+            </div>
+        </div>
+        <div id="personaDemoInfo" class="callout" style="display:none"></div>
+
+        <!-- Two-panel layout -->
+        <div class="persona-panels">
+
+            <!-- Left: Reference (read-only, set from demographic median) -->
+            <div class="persona-panel">
+                <p class="panel-title">Reference &mdash; demographic average</p>
+                <div class="persona-readouts">
+                    <div class="readout-row">
+                        <span class="readout-lbl">Political interest</span>
+                        <span id="refPolInt" class="readout-val">&ndash;</span>
+                    </div>
+                    <div class="readout-row">
+                        <span class="readout-lbl">Economic values</span>
+                        <span id="refEcon" class="readout-val">&ndash;</span>
+                    </div>
+                    <div class="readout-row">
+                        <span class="readout-lbl">Nationalism axis</span>
+                        <span id="refNatint" class="readout-val">&ndash;</span>
+                    </div>
+                    <div class="readout-row">
+                        <span class="readout-lbl">Top global goal</span>
+                        <span id="refGoal" class="readout-val">&ndash;</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Virtual person (user-adjustable) -->
+            <div class="persona-panel">
+                <p class="panel-title">Virtual person &mdash; adjust to explore</p>
+                <div class="controls persona-controls">
+                    <div class="field wide">
+                        <label>Political interest &mdash; <span id="virtPolIntLabel">Some</span></label>
+                        <div class="slider-row">
+                            <span class="slider-end">None at all</span>
+                            <input type="range" id="virtPolInt" min="0" max="4" step="1" value="2"/>
+                            <span class="slider-end">A great deal</span>
+                        </div>
+                    </div>
+                    <div class="field wide">
+                        <label>Economic values &mdash; <span id="virtEconLabel">centre</span></label>
+                        <div class="slider-row">
+                            <span class="slider-end">&larr; left</span>
+                            <input type="range" id="virtEcon" min="-1" max="1" step="0.05" value="0"/>
+                            <span class="slider-end">right &rarr;</span>
+                        </div>
+                    </div>
+                    <div class="field wide">
+                        <label>Nationalism &mdash; <span id="virtNatintLabel">centre</span></label>
+                        <div class="slider-row">
+                            <span class="slider-end">&larr; internationalist</span>
+                            <input type="range" id="virtNatint" min="-1" max="1" step="0.05" value="0"/>
+                            <span class="slider-end">nationalist &rarr;</span>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="virtGoal">Top global goal</label>
+                        <select id="virtGoal"></select>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /persona-panels -->
+
+        <div id="personaChart" class="chart"></div>
+        <p class="note">
+            Uses the same 100-tree random forest as section 2, fitted on all 1,468
+            respondents with the full curated feature set.
+        </p>
+    </section>
+
+    <!-- ============================================================
+         SECTION 4 — demographic explorer
+         ============================================================ -->
+    <section>
+        <p class="kicker">4 &middot; Who backs whom</p>
+        <h2>How important features in the model shape the vote</h2>
+        <p class="explain">
+            Pick one of the survey features identified as important to the model. See how vote intention shifts across
+            its groups.
+            Each bar is one group; its segments show the share intending to vote for
+            each party.
+        </p>
+        <div class="controls">
+            <div class="field">
+                <label for="demoSelect">Break down by</label>
+                <select id="demoSelect"></select>
+            </div>
+            <div class="field">
+                <label>Show as</label>
+                <div class="toggle" id="demoModeToggle">
+                    <button data-mode="share" class="active">Share (%)</button>
+                    <button data-mode="count">Headcount</button>
+                </div>
+            </div>
+        </div>
+        <p class="explain small" id="demoDesc" style="margin:-.3rem 0 .8rem;"></p>
+        <div id="demoChart" class="chart tall"></div>
+    </section>
+
+    <!-- ============================================================
+         SECTION 5 — swayable voters
+         ============================================================ -->
+    <section>
+        <p class="kicker">5 &middot; Persuadable voters</p>
+        <h2>Who could be won over?</h2>
+        <p class="explain">
+            The model predicts, from each respondent's survey answers, how likely they are to vote for each party. Pick
+            a
+            <b>target party</b> to find the people who look most like its voters—based on their demographics, values,
+            and
+            background—but aren't yet committed to it. <b>Uncommitted</b> shows undecided or won't-vote respondents who,
+            if they were to commit, the model thinks would most likely choose your target party. <b>Committed
+            elsewhere</b>
+            shows voters currently supporting another party but whom the model thinks fit your target party's profile
+            nearly as
+            well - either it predicted your party first (got it wrong), or your party was their second-best match.
+        </p>
+        <p class="explain">
+            Start by picking a target party and choosing which group to analyse (uncommitted voters or those committed
+            to other parties). The <b>Profile by</b> dropdown lets you break down the group by demographics. The <b>How
+            many people</b> slider shows the top N most persuadable candidates, ranked by how likely the model thinks
+            they are to vote for your target party—the left chart shows their average values on the economic and nationlistic axes vs committed voters, and
+            the right chart breaks down their demographics compared to the general population.
+        </p>
+        <div class="controls">
+            <div class="field">
+                <label for="swayParty">Target party</label>
+                <select id="swayParty"></select>
+            </div>
+            <div class="field">
+                <label>Pool</label>
+                <div class="toggle" id="swayModeToggle">
+                    <button data-mode="undecided" class="active">Uncommitted only</button>
+                    <button data-mode="everyone">Committed elsewhere</button>
+                </div>
+            </div>
+            <div class="field">
+                <label for="swayDemo">Profile by</label>
+                <select id="swayDemo"></select>
+            </div>
+            <div class="field">
+                <label for="swayK">How many people: <span id="swayKVal">60</span></label>
+                <input type="range" id="swayK" min="20" max="200" step="10" value="60"/>
+            </div>
+        </div>
+        <p class="callout" id="swaySummary"></p>
+        <div class="grid2">
+            <div>
+                <p class="note" style="text-align:center;margin:.2rem 0;">Persuadable individuals' average values vs the
+                    party's committed voters</p>
+                <div id="swayCompass" class="chart"></div>
+                <p class="note">
+                    The <b>circle</b> represents the average position of voters already committed to the target party.
+                    The <b>star</b> shows the average position of the persuadable group you selected above.
+                    If the star is close to the circle, persuadable voters align well with the party's existing base on
+                    values.
+                    The distance shows how much work it might take to move voters over, or how naturally aligned they
+                    already are.
+                </p>
+            </div>
+            <div>
+                <p class="note" style="text-align:center;margin:.2rem 0;">Their make-up vs everyone else</p>
+                <div id="swayDemoChart" class="chart"></div>
+                <p class="note">
+                    The left bar shows the demographic make-up of the persuadable group (age, region, work sector,
+                    etc.).
+                    The right bar is the population average, for comparison.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>
+            Built for the Stonehaven take-home task. Analysis and data processing in
+            <code>analysis/analysis2.ipynb</code>; dashboard data regenerated by
+            <code>analysis/export_dashboard.py</code>. Survey of 1,468 UK respondents.
+        </p>
+    </footer>
+</main>
+
+<!-- data.js sets window.DASHBOARD_DATA, so the page needs no web server. -->
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+# Python dependencies for the analysis + figure/dashboard generation.
+# (The dashboard itself needs no Python — it's static HTML/JS. These are only
+#  for re-running analysis/export_dashboard.py and analysis/make_figures.py.)
+pandas>=2.2
+numpy>=2.0
+scikit-learn>=1.6
+scipy>=1.15
+matplotlib>=3.10
+seaborn>=0.13
