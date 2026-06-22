@@ -10,6 +10,8 @@ A take-home built from a survey of **1,468 UK respondents**. Two parts:
   and the model: [`docs/`](docs/). It's a static site (HTML + Plotly + pre-computed
   JSON) — no backend, ready for GitHub Pages.
 
+**[📊 View the live dashboard](https://hollymorley.github.io/voting-intention-analysis/)**
+
 ## Run the dashboard locally
 
 **Just open `docs/index.html` in a browser** (double-click it). 
@@ -31,15 +33,6 @@ These scripts reproduce the exact pipeline in `analysis/analysis2.ipynb`, so the
 and the write-up always agree. If you change the analysis (e.g. edit the model in
 `analysis/model.py` or the feature groups in `analysis/config.py`), re-run the two scripts
 to refresh the outputs.
-
-## Deploy to GitHub Pages
-
-The site is the `docs/` folder, so no build step is needed:
-
-1. Push the repo to GitHub.
-2. **Settings → Pages → Build and deployment → Deploy from a branch.**
-3. Choose your branch and the **`/docs`** folder, then save.
-4. The live URL appears there after a minute.
 
 ## Repo layout
 
