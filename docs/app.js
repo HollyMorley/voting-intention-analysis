@@ -209,8 +209,7 @@ function drawDemo() {
 // ============================================================
 function updateModelStats() {
   const e = DATA.model_eval[state.policy];
-  // document.getElementById("statAcc").textContent = pct(e.cv_balanced_accuracy);
-  document.getElementById("statAcc").textContent = pct(0.40);
+  document.getElementById("statAcc").textContent = pct(e.cv_balanced_accuracy);
   document.getElementById("statBaseline").textContent = pct(e.baselines["always Labour (most frequent)"]);
   const g = e.gap_vs_baseline;
   document.getElementById("statGap").textContent =

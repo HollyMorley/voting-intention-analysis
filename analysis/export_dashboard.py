@@ -239,6 +239,11 @@ def evaluate_policy(idx):
     importance = {"chance": r(chance), "blocks": blocks}
 
     # --- held-out evaluation (fit once, score the test set) ---
+    # Also compute cross-validated balanced accuracy for robustness
+    cv_results = model.cross_validate_model(
+        model.make_rf_pipeline(), Xc.loc[idx], y, cv=5, scoring=("balanced_accuracy",), seed=0)
+    cv_bal_acc = cv_results["balanced_accuracy_mean"]
+
     clf = model.make_rf_pipeline().fit(Xc.loc[tr], y_tr)
     pred = clf.predict(Xc.loc[te])
     present = [c for c in CLASS_ORDER if c in set(y_te)]
@@ -274,7 +279,7 @@ def evaluate_policy(idx):
         "n_train": int(len(tr)), "n_test": int(len(te)), "n_classes": int(y.nunique()),
         "accuracy": r(accuracy_score(y_te, pred)),
         "accuracy_lo": r(ci.loc[0.025, "accuracy"]), "accuracy_hi": r(ci.loc[0.975, "accuracy"]),
-        "balanced_accuracy": r(balanced_accuracy_score(y_te, pred)),
+        "cv_balanced_accuracy": r(cv_bal_acc),
         "baselines": {
             "always Labour (most frequent)": r(accuracy_score(y_te, mf)),
             "random by frequency (stratified)": r(accuracy_score(y_te, strat)),
