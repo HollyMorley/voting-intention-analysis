@@ -213,8 +213,7 @@ the model strongly predicts Labour (53%), with other outcomes much less likely (
 ### Exploring the model
 
 The model's outputs are outlined in an interactive dashboard, where
-predicted vote shares and the feature relationships above can be explored by group. **[→ Interactive dashboard](#)**
-*(link to be added once deployed).*
+predicted vote shares and the feature relationships above can be explored by group. **[Interactive dashboard](https://hollymorley.github.io/voting-intention-analysis/)**
 
 
 
